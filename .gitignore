@@ -1,0 +1,21 @@
+# Credentials
+*.json
+!package.json
+!firebase.json
+!tsconfig.json
+
+# Dependencies
+node_modules/
+__pycache__/
+.gradle/
+build/
+dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
