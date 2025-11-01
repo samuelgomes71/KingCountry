@@ -1,0 +1,21 @@
+{
+  "name": "kingcountry-frontend",
+  "version": "1.0.0",
+  "description": "KingCountry Frontend Application",
+  "main": "index.html",
+  "scripts": {
+    "build": "mkdir -p build && cp -r public/* build/ && cp -r src build/ && echo 'Build completed to build/ directory'",
+    "start": "python3 -m http.server 8080",
+    "test": "echo 'No tests specified'"
+  },
+  "keywords": [
+    "kingcountry",
+    "cost-of-living",
+    "comparison",
+    "frontend"
+  ],
+  "author": "Samuel Paulino Gomes",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
