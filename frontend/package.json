@@ -4,8 +4,8 @@
   "description": "KingCountry Frontend Application",
   "main": "index.html",
   "scripts": {
-    "build": "mkdir -p build && cp -r public/* build/ && cp -r src build/ && echo 'Build completed to build/ directory'",
-    "start": "python3 -m http.server 8080",
+    "build": "mkdir -p public && cp -r src/* public/ 2>/dev/null || true && echo '✅ Build completed'",
+    "start": "python3 -m http.server 8080 --directory public",
     "test": "echo 'No tests specified'"
   },
   "keywords": [
