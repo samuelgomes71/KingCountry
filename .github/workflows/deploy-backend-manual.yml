@@ -1,4 +1,4 @@
-name: 🚀 Deploy Backend (App Engine)
+name: 🚀 Deploy Backend (App Engine) - KingCountry
 
 on:
   workflow_dispatch:  # MANUAL - Botão para clicar!
@@ -33,20 +33,27 @@ env:
 
 jobs:
   deploy-backend:
-    name: 🚀 Deploy Backend
+    name: 🚀 Deploy KingCountry Backend
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.confirm_deploy == 'DEPLOY' || github.event_name == 'push' }}
+    if: ${{ github.event_name == 'push' || github.event.inputs.confirm_deploy == 'DEPLOY' }}
     
     steps:
-      - name: ✅ Verificar Confirmação
-        if: github.event_name == 'workflow_dispatch'
+      - name: ✅ Verificar Confirmação (Manual Deploy)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           if [ "${{ github.event.inputs.confirm_deploy }}" != "DEPLOY" ]; then
             echo "❌ Deploy cancelado: confirmação não fornecida"
             echo "Por favor, digite 'DEPLOY' no campo de confirmação"
             exit 1
           fi
-          echo "✅ Deploy confirmado, prosseguindo..."
+          echo "✅ Deploy manual confirmado, prosseguindo..."
+      
+      - name: ✅ Deploy Automático Detectado
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          echo "✅ Deploy automático disparado por push"
+          echo "📦 Commit: ${{ github.sha }}"
+          echo "👤 Author: ${{ github.actor }}"
       
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
@@ -98,126 +105,167 @@ jobs:
       - name: 🔧 Configure Environment Variables
         run: |
           cd backend
-          echo "📝 Configurando variáveis de ambiente para KingSMS multi-database..."
+          echo "📝 Configurando variáveis de ambiente (Firestore-Only)..."
           cat > .env.production << 'EOF'
-          # Firestore (já existe via serviceAccountKey.json)
+          # Firestore (Database Unificado)
           GOOGLE_APPLICATION_CREDENTIALS=serviceAccountKey.json
-          
-          # PostgreSQL (Cloud SQL)
-          POSTGRES_HOST=${{ secrets.POSTGRES_HOST || 'not_configured' }}
-          POSTGRES_PORT=5432
-          POSTGRES_USER=${{ secrets.POSTGRES_USER || 'kingsms_backend' }}
-          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD || '' }}
-          POSTGRES_DB=kingsms_db
-          
-          # Redis (Memorystore) - Para rate limiting e cache
-          REDIS_HOST=${{ secrets.REDIS_HOST || 'not_configured' }}
-          REDIS_PORT=6379
-          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD || '' }}
-          
-          # BigQuery
-          BIGQUERY_PROJECT_ID=${{ env.PROJECT_ID }}
-          BIGQUERY_DATASET=king_prod
+          FIRESTORE_DATABASE=kingcountry-db
           
           # Firebase Storage
-          STORAGE_BUCKET_SMS_MEDIA=king-user-media
+          STORAGE_BUCKET_USER_MEDIA=kinggroup-website-463104.appspot.com
+          STORAGE_BUCKET_POI_MEDIA=kinggroup-website-463104.appspot.com
+          STORAGE_BUCKET_MAP_TILES=kinggroup-website-463104.appspot.com
           
           # Project
           PROJECT_ID=${{ env.PROJECT_ID }}
           
-          # KingSMS Specific
-          APP_NAME=kingsms
-          SMS_MAX_LENGTH=160
-          SMS_DAILY_LIMIT=1000
+          # Arquitetura
+          ARCHITECTURE=firestore-only
           EOF
           
           echo "✅ Variáveis configuradas!"
-          echo "⚠️  Postgres/Redis funcionarão quando provisionados no GCP"
+          echo "✅ Arquitetura Firestore-Only ativada"
 
       - name: 🧪 Validate Backend
         run: |
           cd backend
-          python -c "from app import app; print('✅ Backend imports successfully')" || \
-          python -c "from server import app; print('✅ Backend imports successfully')" || \
-          python -c "from main import app; print('✅ Backend imports successfully')" || \
-          echo "⚠️ Backend validation - verificar nome do arquivo principal"
+          echo "🔍 Validando estrutura do backend..."
+          
+          # Verificar arquivos essenciais
+          if [ ! -f "main.py" ]; then
+            echo "❌ main.py não encontrado!"
+            exit 1
+          fi
+          
+          if [ ! -f "app.yaml" ]; then
+            echo "❌ app.yaml não encontrado!"
+            exit 1
+          fi
+          
+          if [ ! -f "requirements.txt" ]; then
+            echo "❌ requirements.txt não encontrado!"
+            exit 1
+          fi
+          
+          # Verificar se pode importar
+          echo "🔍 Testando imports..."
+          python -c "import sys; from main import app; print('✅ Backend imports successfully'); print(f'✅ App type: {type(app).__name__}')" || {
+            echo "❌ Backend validation failed!"
+            echo "🔍 Conteúdo de main.py:"
+            head -20 main.py
+            exit 1
+          }
+          
           echo "✅ Backend validation passed!"
+          
+          # Mostrar info do app.yaml
+          echo ""
+          echo "📋 App Engine Configuration (app.yaml):"
+          cat app.yaml
 
       - name: 📦 Deploy to App Engine
         run: |
-          echo "🚀 Deploying KingSMS Backend to Google App Engine..."
+          echo "🚀 Deploying to Google App Engine..."
           cd backend
-          gcloud app deploy app.yaml --quiet
+          
+          # Deploy com output verboso
+          gcloud app deploy app.yaml \
+            --project=${{ env.PROJECT_ID }} \
+            --quiet \
+            --verbosity=info
+          
           echo "✅ Deploy completed successfully!"
 
       - name: ⏳ Wait for deployment
         run: |
           echo "⏳ Aguardando deployment ser ativado..."
-          sleep 30
+          sleep 60  # Aumentado para 60s
 
       - name: ✅ Health Check
         run: |
           BACKEND_URL="https://${{ env.PROJECT_ID }}.uc.r.appspot.com"
-          echo "🔍 Testing: $BACKEND_URL/api/health"
+          echo "🔍 Testing: $BACKEND_URL/health"
           
-          for i in {1..5}; do
-            if curl -f -s $BACKEND_URL/api/health; then
-              echo ""
+          # Verificar se o serviço está up
+          echo "🔍 Verificando status do App Engine..."
+          gcloud app versions list --service=default --project=${{ env.PROJECT_ID }}
+          
+          # Tentar health check com mais detalhes
+          for i in {1..10}; do
+            echo ""
+            echo "🔍 Tentativa $i/10..."
+            
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" $BACKEND_URL/health || echo "000")
+            echo "   HTTP Code: $HTTP_CODE"
+            
+            if [ "$HTTP_CODE" = "200" ]; then
               echo "✅ Health check passed!"
+              curl -s $BACKEND_URL/health | python3 -m json.tool || true
               
-              # Test root endpoint
+              # Test database health
               echo ""
-              echo "🔍 Testing root: $BACKEND_URL/api/"
-              curl -s $BACKEND_URL/api/ | python3 -m json.tool || true
+              echo "🔍 Testing database health: $BACKEND_URL/health/database"
+              curl -s $BACKEND_URL/health/database | python3 -m json.tool || true
               
               exit 0
+            elif [ "$HTTP_CODE" = "404" ]; then
+              echo "⚠️  404 - Endpoint /health não encontrado"
+              echo "   Testando root URL..."
+              curl -I $BACKEND_URL || true
+            elif [ "$HTTP_CODE" = "500" ] || [ "$HTTP_CODE" = "502" ] || [ "$HTTP_CODE" = "503" ]; then
+              echo "⚠️  Erro $HTTP_CODE - Backend com problemas, verificando logs..."
+              gcloud app logs read --service=default --project=${{ env.PROJECT_ID }} --limit=20 || true
+            else
+              echo "⚠️  Código inesperado: $HTTP_CODE"
             fi
-            echo "⏳ Tentativa $i/5 falhou, aguardando..."
-            sleep 10
+            
+            if [ $i -lt 10 ]; then
+              echo "   Aguardando 15s..."
+              sleep 15
+            fi
           done
           
-          echo "⚠️ Health check failed after 5 attempts"
-          echo "💡 Isso pode ser normal se o endpoint /api/health ainda não existe"
-          echo "✅ Deploy realizado com sucesso mesmo assim!"
-          exit 0
+          echo ""
+          echo "❌ Health check failed after 10 attempts"
+          echo "🔍 Últimos logs do App Engine:"
+          gcloud app logs read --service=default --project=${{ env.PROJECT_ID }} --limit=50 || true
+          
+          exit 1
 
       - name: 📊 Deployment Summary
         if: always()
         run: |
-          echo "## 🎉 KingSMS Backend Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## 🎉 KingCountry Backend Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📍 URLs" >> $GITHUB_STEP_SUMMARY
           echo "- **Backend URL:** https://${{ env.PROJECT_ID }}.uc.r.appspot.com" >> $GITHUB_STEP_SUMMARY
           echo "- **Health Check:** https://${{ env.PROJECT_ID }}.uc.r.appspot.com/health" >> $GITHUB_STEP_SUMMARY
+          echo "- **Database Health:** https://${{ env.PROJECT_ID }}.uc.r.appspot.com/health/database" >> $GITHUB_STEP_SUMMARY
           echo "- **API Docs:** https://${{ env.PROJECT_ID }}.uc.r.appspot.com/docs" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📱 KingSMS Features" >> $GITHUB_STEP_SUMMARY
-          echo "- **SMS Sending:** Bulk SMS delivery" >> $GITHUB_STEP_SUMMARY
-          echo "- **Rate Limiting:** Redis-based control" >> $GITHUB_STEP_SUMMARY
-          echo "- **Analytics:** BigQuery metrics" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🗄️ Databases" >> $GITHUB_STEP_SUMMARY
-          echo "- **Firestore:** ✅ Always enabled (users, campaigns)" >> $GITHUB_STEP_SUMMARY
-          echo "- **PostgreSQL:** ${{ secrets.POSTGRES_HOST && '✅ Configured' || '⚠️ Not provisioned yet' }} (ledger)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Redis:** ${{ secrets.REDIS_HOST && '✅ Configured' || '⚠️ Not provisioned yet' }} (rate limit)" >> $GITHUB_STEP_SUMMARY
-          echo "- **BigQuery:** ✅ Enabled (SMS metrics)" >> $GITHUB_STEP_SUMMARY
+          echo "### 🗄️ Arquitetura" >> $GITHUB_STEP_SUMMARY
+          echo "- **Firestore:** ✅ Database Unificado (42 collections)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Firebase Storage:** ✅ CDN Global" >> $GITHUB_STEP_SUMMARY
+          echo "- **Cloud Functions:** ✅ Background jobs (cleanup + agregações)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Arquitetura:** Firestore-Only Econômica ($75-150/mês)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📋 Info" >> $GITHUB_STEP_SUMMARY
           echo "- **Projeto:** ${{ env.PROJECT_ID }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Ambiente:** ${{ inputs.environment || 'production' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Ambiente:** ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Status:** ✅ Deploy Concluído" >> $GITHUB_STEP_SUMMARY
           echo "- **Timestamp:** $(date)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "ℹ️ Backend funciona com graceful degradation. Postgres/Redis são opcionais." >> $GITHUB_STEP_SUMMARY
+          echo "💰 **Economia:** ~$250-325/mês vs arquitetura multi-database" >> $GITHUB_STEP_SUMMARY
           
           echo ""
-          echo "✅ KingSMS Backend deployed successfully!"
+          echo "✅ KingCountry Backend deployed successfully!"
           echo "🌐 URL: https://${{ env.PROJECT_ID }}.uc.r.appspot.com"
-          echo "📱 SMS API ready for messaging!"
+          echo "🔗 Health: https://${{ env.PROJECT_ID }}.uc.r.appspot.com/health"
+          echo "🗄️ Database Health: https://${{ env.PROJECT_ID }}.uc.r.appspot.com/health/database"
           echo "📅 Deployed at: $(date)"
 
       - name: 🔍 Check Logs (on failure)
         if: failure()
         run: |
           echo "⚠️ Deployment failed! Checking logs..."
-          gcloud app logs tail --service=default --project=${{ env.PROJECT_ID }}
+          gcloud app logs read --service=default --project=${{ env.PROJECT_ID }} --limit=50

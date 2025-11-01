@@ -1,4 +1,4 @@
-name: 🌐 Deploy Frontend (Firebase Hosting)
+name: 🌐 Deploy Frontend (Firebase) - KingCountry
 
 on:
   workflow_dispatch:  # MANUAL - Botão para clicar!
@@ -17,8 +17,6 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/deploy-frontend-manual.yml'
-      - 'firebase.json'
-      - '.firebaserc'
 
 permissions:
   contents: read
@@ -31,7 +29,7 @@ env:
 
 jobs:
   deploy-frontend:
-    name: 🌐 Deploy Frontend
+    name: 🌐 Deploy KingCountry Frontend
     runs-on: ubuntu-latest
     
     steps:
@@ -114,16 +112,28 @@ jobs:
       - name: 📊 Deployment Summary
         if: always()
         run: |
-          echo "## 🌐 KingChat Frontend Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## 🌐 KingCountry Frontend Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📍 URLs" >> $GITHUB_STEP_SUMMARY
+          echo "- **Primary:** https://${{ env.PROJECT_ID }}.web.app" >> $GITHUB_STEP_SUMMARY
+          echo "- **Alternative:** https://${{ env.PROJECT_ID }}.firebaseapp.com" >> $GITHUB_STEP_SUMMARY
+          echo "- **Custom Domain:** https://www.kinggrouptech.com (se configurado)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Integração" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend API:** https://${{ env.PROJECT_ID }}.uc.r.appspot.com" >> $GITHUB_STEP_SUMMARY
+          echo "- **Firestore:** kingcountry-db (8 collections)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Storage:** Firebase Storage + CDN" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Info" >> $GITHUB_STEP_SUMMARY
           echo "- **Projeto:** ${{ env.PROJECT_ID }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Ambiente:** ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Firebase URL:** https://${{ env.PROJECT_ID }}.web.app" >> $GITHUB_STEP_SUMMARY
-          echo "- **Firebase URL Alt:** https://${{ env.PROJECT_ID }}.firebaseapp.com" >> $GITHUB_STEP_SUMMARY
           echo "- **Status:** ✅ Deploy Concluído" >> $GITHUB_STEP_SUMMARY
           echo "- **Timestamp:** $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🚀 **Framework:** React 18 + Firebase SDK" >> $GITHUB_STEP_SUMMARY
           
           echo ""
-          echo "✅ KingChat Frontend deployed successfully!"
+          echo "✅ KingCountry Frontend deployed successfully!"
           echo "🌐 URL: https://${{ env.PROJECT_ID }}.web.app"
+          echo "🔗 Backend: https://${{ env.PROJECT_ID }}.uc.r.appspot.com"
           echo "📅 Deployed at: $(date)"
-
