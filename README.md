@@ -1,18 +1,41 @@
-# 🏛️ KingCountry - Global Life Comparison
+# 🌍 KingCountry - Comparação Global de Custo de Vida
 
 <div align="center">
 
 ![Version](https://img.shields.io/badge/version-1.0.0-brightgreen.svg)
-![Platform](https://img.shields.io/badge/platform-Android%20%7C%20iOS%20%7C%20Windows%20%7C%20Linux-green.svg)
-![License](https://img.shields.io/badge/license-Proprietary-red.svg)
+![Platform](https://img.shields.io/badge/platform-Android%20%7C%20iOS%20%7C%20Windows%20%7C%20Linux%20%7C%20KMP-green.svg)
 ![Status](https://img.shields.io/badge/status-Development-yellow.svg)
 
-**Comparação Global de Custo de Vida**  
-*Descubra onde seu dinheiro realmente rende*
+**Comparação de países/cidades com ~100 itens de custo de vida**  
+*Simulações • Comparações • Análise Econômica • Relocação*
 
-[📱 Download](#-download) • [📚 Documentação](#-documentação) • [🚀 Deploy](#-deploy) • [🌍 Multiplataforma](#-branches-multiplataforma)
+[📱 Download](#-download) • [📚 Docs](#-estrutura) • [🚀 Deploy](#-deploy)
 
 </div>
+
+---
+
+## 🎯 ARQUITETURA DO ECOSSISTEMA KING
+
+### Projeto GCP Único Compartilhado
+```
+Project: kinggroup-website-463104
+Project #: 598115153491
+
+✅ Login Único (Firebase Auth) para TODOS os 14 apps King
+✅ 1 Cadastro → Acesso a qualquer app (após compra/assinatura)
+✅ Dados isolados por app (SEM mistura)
+```
+
+### O Que É Compartilhado
+- 🔐 **Firebase Auth**: Login único (SSO)
+- 👤 **Collection `users`**: Perfil + `apps_access`
+- 💳 **Collections `payments`, `subscriptions`**
+
+### O Que É ISOLADO (KingCountry)
+- 📊 **8 Firestore Collections**: `kingcountry_*`
+- 📦 **Cloud Storage**: `gs://.../kingcountry/`
+- 🚀 **App Engine Service**: `kingcountry`
 
 ---
 
