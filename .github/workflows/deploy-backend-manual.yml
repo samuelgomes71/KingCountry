@@ -216,5 +216,5 @@ jobs:
       - name: 🔍 Check Logs (on failure)
         if: failure()
         run: |
-          echo "⚠️ Deployment failed!"
-          echo "📋 Verifique os logs em: https://console.cloud.google.com/logs/query?project=${{ env.PROJECT_ID }}"
+          echo "⚠️ Deployment failed! Checking logs..."
+          gcloud app logs tail --service=default --project=${{ env.PROJECT_ID }}
