@@ -76,14 +76,13 @@ jobs:
 
       - name: 📦 Build Frontend
         run: |
-          echo "🏗️ Building React frontend..."
+          echo "🏗️ KingSMS uses static HTML - no build needed"
           cd frontend
-          yarn install
-          yarn build
+          echo "✅ Frontend ready for deployment"
+          ls -la
 
       - name: 🔥 Deploy to Firebase Hosting
         run: |
-          cd frontend
           echo "🔥 Deploying to Firebase Hosting..."
           export FIREBASE_TOKEN=$(gcloud auth print-access-token)
           firebase deploy --only hosting --project=${{ env.PROJECT_ID }} --non-interactive --token "$FIREBASE_TOKEN"
@@ -114,16 +113,15 @@ jobs:
       - name: 📊 Deployment Summary
         if: always()
         run: |
-          echo "## 🌐 KingChat Frontend Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## 🌐 KingSMS Frontend Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "- **Projeto:** ${{ env.PROJECT_ID }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Ambiente:** ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Ambiente:** ${{ inputs.environment || 'production' }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Firebase URL:** https://${{ env.PROJECT_ID }}.web.app" >> $GITHUB_STEP_SUMMARY
           echo "- **Firebase URL Alt:** https://${{ env.PROJECT_ID }}.firebaseapp.com" >> $GITHUB_STEP_SUMMARY
           echo "- **Status:** ✅ Deploy Concluído" >> $GITHUB_STEP_SUMMARY
           echo "- **Timestamp:** $(date)" >> $GITHUB_STEP_SUMMARY
           
           echo ""
-          echo "✅ KingChat Frontend deployed successfully!"
+          echo "✅ KingSMS Frontend deployed successfully!"
           echo "🌐 URL: https://${{ env.PROJECT_ID }}.web.app"
           echo "📅 Deployed at: $(date)"
-
