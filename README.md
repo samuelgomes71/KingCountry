@@ -34,7 +34,28 @@ Project #: 598115153491
 
 ### O Que É ISOLADO (KingCountry)
 - 📊 **8 Firestore Collections**: `kingcountry_*`
-- 📦 **Cloud Storage**: `gs://.../kingcountry/`
+- 📦 **Cloud Storage**: `gs://kinggroup-website-463104.appspot.com/kingcountry/` (✅ ESTRUTURA REAL VERIFICADA)
+  ```
+  gs://kinggroup-website-463104.appspot.com/
+  └── kingcountry/                       # ✅ PASTA ISOLADA
+      ├── android-native/                # APKs Android
+      │   ├── kingcountry-latest.apk     # ← APK principal para download
+      │   └── metadata.json              # Metadados das versões
+      │
+      ├── ios/                           # iOS builds (futuro)
+      │
+      ├── windows/                       # Windows desktop (futuro)
+      │
+      ├── linux/                         # Linux desktop (futuro)
+      │
+      ├── logs/                          # Logs de aplicação
+      │
+      └── assets/                        # Assets específicos do app
+  ```
+  **Download URL (quando disponível)**:
+  ```
+  https://storage.googleapis.com/kinggroup-website-463104.appspot.com/kingcountry/android-native/kingcountry-latest.apk
+  ```
 - 🚀 **App Engine Service**: `kingcountry`
 
 ---
